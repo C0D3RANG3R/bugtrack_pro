@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.bugtracker.bugtrack_backend.entity.Issue;
@@ -21,5 +22,9 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     List<Issue> findByProjectIdAndStatus(Long projectId, String status);
 
-
+    @Query("SELECT i FROM Issue i WHERE " +
+       "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+       "LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<Issue> search(@Param("query") String query);
+    
 }

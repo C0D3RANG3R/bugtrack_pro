@@ -103,15 +103,20 @@ public class IssueService {
     }
 
     public List<KanbanResponseDTO> getKanbanBoardByProject(Long projectId) {
-    List<String> statuses = List.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
+        List<String> statuses = List.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
 
-    return statuses.stream().map(status -> {
-        List<Issue> issues = issueRepo.findByProjectIdAndStatus(projectId, status);
-        List<IssueResponseDTO> dtos = issues.stream()
+        return statuses.stream().map(status -> {
+            List<Issue> issues = issueRepo.findByProjectIdAndStatus(projectId, status);
+            List<IssueResponseDTO> dtos = issues.stream()
                 .map(issueMapper::toDTO)
                 .collect(Collectors.toList());
-        return new KanbanResponseDTO(status, dtos);
-    }).collect(Collectors.toList());
-}
+            return new KanbanResponseDTO(status, dtos);
+        }).collect(Collectors.toList());
+    }
 
+    public List<IssueResponseDTO> searchIssues(String query) {
+        return issueRepo.search(query).stream()
+            .map(issueMapper::toDTO)
+            .toList();
+    }
 }

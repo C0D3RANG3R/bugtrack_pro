@@ -63,4 +63,8 @@ public class IssueController {
         return ResponseEntity.ok(issueService.getKanbanBoardByProject(projectId));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<IssueResponseDTO>> search(@RequestParam String query) {
+        return ResponseEntity.ok(issueService.searchIssues(query));
+    }
 }
