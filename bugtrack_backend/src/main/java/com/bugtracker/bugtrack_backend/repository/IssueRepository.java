@@ -11,6 +11,7 @@ import com.bugtracker.bugtrack_backend.entity.Issue;
 @Repository
 public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Issue> findByProjectId(Long projectId);
+    List<Issue> findByAssigneeId(Long assigneeId);
 
     @Query("SELECT i.status, COUNT(i) FROM Issue i GROUP BY i.status")
     List<Object[]> countByStatusGroupRaw();

@@ -3,10 +3,14 @@ package com.bugtracker.bugtrack_backend.controller;
 import com.bugtracker.bugtrack_backend.dto.AuthRequest;
 import com.bugtracker.bugtrack_backend.dto.AuthResponse;
 import com.bugtracker.bugtrack_backend.dto.RegisterRequest;
+import com.bugtracker.bugtrack_backend.dto.UserProfileDTO;
 import com.bugtracker.bugtrack_backend.service.AuthService;
+import com.bugtracker.bugtrack_backend.service.UserService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
@@ -34,5 +39,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserProfileDTO> getProfile() {
+        return ResponseEntity.ok(userService.getCurrentUserProfile());
+    }
+
 }
 
