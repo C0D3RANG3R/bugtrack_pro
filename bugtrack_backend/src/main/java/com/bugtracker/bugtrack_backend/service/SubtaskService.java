@@ -22,6 +22,7 @@ public class SubtaskService {
     private final SubtaskRepository subtaskRepo;
     private final IssueRepository issueRepo;
     private final UserRepository userRepo;
+    private final ActivityLogService activityLogService;
 
     public SubtaskResponseDTO create(SubtaskRequestDTO dto) {
         Subtask subtask = new Subtask();
@@ -34,6 +35,10 @@ public class SubtaskService {
         subtask.setCreatedAt(LocalDate.now());
         subtask.setUpdatedAt(LocalDate.now());
         subtaskRepo.save(subtask);
+        activityLogService.logAction(
+            dto.getAssigneeId(),
+            "Created subtask: " + subtask.getTitle(),
+            subtask.getId());
         return SubtaskMapper.toDTO(subtask);
     }
 

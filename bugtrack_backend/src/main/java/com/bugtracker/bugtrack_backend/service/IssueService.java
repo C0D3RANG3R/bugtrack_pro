@@ -25,11 +25,18 @@ public class IssueService {
     private final CommentRepository commentRepo;
     private final IssueMapper issueMapper;
     private final CommentMapper commentMapper;
+    private final NotificationService notificationService;
+    private final ActivityLogService activityLogService;
 
     public IssueResponseDTO createIssue(IssueRequestDTO dto) throws Exception {
         User reporter = userRepo.findById(dto.getReporterId()).orElseThrow(() -> new RuntimeException("Reporter not found"));
         Issue issue = issueMapper.toEntity(dto, reporter);
         issueRepo.save(issue);
+        notificationService.sendNotification(issue.getAssignee().getId(), "Issue assigned to: " + issue.getAssignee().getUsername());
+        activityLogService.logAction(
+            dto.getReporterId(),
+            "Created issue: " + issue.getTitle(),
+            issue.getId());
         return issueMapper.toDTO(issue);
     }
 
@@ -58,6 +65,10 @@ public class IssueService {
         Issue issue = issueRepo.findById(id).orElseThrow(() -> new RuntimeException("Issue not found"));
         issue.setStatus(status);
         issue.setUpdatedAt(LocalDate.now());
+        activityLogService.logAction(
+            issue.getAssignee().getId(),
+            "Updated status of issue to: " + status,
+            issue.getId());
     }
 
     public CommentDTO addComment(Long issueId, String content, Long authorId) {
@@ -66,6 +77,12 @@ public class IssueService {
 
         Comment comment = new Comment(null, content, LocalDateTime.now(), author, issue);
         commentRepo.save(comment);
+        notificationService.sendNotification(authorId, "New comment by " + author.getUsername() + " on issue: " + issue.getTitle());
+        commentRepo.save(comment);
+        activityLogService.logAction(
+            authorId,
+            "Added comment to issue: " + issue.getTitle(),
+            issue.getId());
         return commentMapper.toDTO(comment);
     }
 

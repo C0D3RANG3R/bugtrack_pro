@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bugtracker.bugtrack_backend.entity.Attachment;
+import com.bugtracker.bugtrack_backend.entity.Issue;
+import com.bugtracker.bugtrack_backend.entity.Subtask;
 import com.bugtracker.bugtrack_backend.repository.AttachmentRepository;
 import com.bugtracker.bugtrack_backend.repository.IssueRepository;
 import com.bugtracker.bugtrack_backend.repository.SubtaskRepository;
@@ -26,6 +28,8 @@ public class AttachmentService {
     private final IssueRepository issueRepo;
     private final SubtaskRepository subtaskRepo;
     private final UserRepository userRepo;
+    private final NotificationService notificationService;
+    private final ActivityLogService activityLogService;
 
     private final Path uploadDir = Paths.get("uploads");
 
@@ -43,10 +47,27 @@ public class AttachmentService {
         attachment.setUploadedAt(LocalDateTime.now());
         attachment.setUploadedBy(userRepo.findById(userId).orElseThrow());
 
-        if (issueId != null) attachment.setIssue(issueRepo.findById(issueId).orElseThrow());
-        if (subtaskId != null) attachment.setSubtask(subtaskRepo.findById(subtaskId).orElseThrow());
+        Issue issue = null;
+        Subtask subtask = null;
+        if (issueId != null) {
+            issue = issueRepo.findById(issueId).orElseThrow();
+            attachment.setIssue(issue);
+        }
+        if (subtaskId != null) {
+            subtask = subtaskRepo.findById(subtaskId).orElseThrow();
+            attachment.setSubtask(subtask);
+        }
 
-        return attachmentRepo.save(attachment);
+        attachmentRepo.save(attachment);
+        notificationService.sendNotification(userId, "File uploaded by User ID: " + userId + " to Issue/Subtask");
+        attachmentRepo.save(attachment);
+        activityLogService.logAction(
+            userId,
+            "Uploaded file to " + (issue != null ? "issue: " + (issue).getId() : "subtask: " + (subtask).getId()),
+            issue != null ? (issue).getId() : (subtask).getId()
+        );
+        return attachment;
+
     }
 
     public byte[] download(Long id) throws IOException {
