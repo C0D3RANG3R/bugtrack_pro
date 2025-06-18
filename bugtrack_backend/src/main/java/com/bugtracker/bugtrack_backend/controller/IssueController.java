@@ -67,4 +67,14 @@ public class IssueController {
     public ResponseEntity<List<IssueResponseDTO>> search(@RequestParam String query) {
         return ResponseEntity.ok(issueService.searchIssues(query));
     }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<IssueResponseDTO>> filterIssues(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) Long assigneeId,
+            @RequestParam(required = false) Long projectId) {
+        return ResponseEntity.ok(issueService.filterIssues(status, priority, assigneeId, projectId));
+    }
+
 }
