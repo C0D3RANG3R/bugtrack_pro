@@ -60,7 +60,6 @@ public class AttachmentService {
 
         attachmentRepo.save(attachment);
         notificationService.sendNotification(userId, "File uploaded by User ID: " + userId + " to Issue/Subtask");
-        attachmentRepo.save(attachment);
         activityLogService.logAction(
             userId,
             "Uploaded file to " + (issue != null ? "issue: " + (issue).getId() : "subtask: " + (subtask).getId()),

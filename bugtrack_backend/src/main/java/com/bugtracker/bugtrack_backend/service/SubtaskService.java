@@ -50,12 +50,14 @@ public class SubtaskService {
         Subtask subtask = subtaskRepo.findById(id).orElseThrow();
         subtask.setStatus(status);
         subtask.setUpdatedAt(LocalDate.now());
+        subtaskRepo.save(subtask); 
     }
 
     public void updateTimeSpent(Long id, Double hours) {
         Subtask subtask = subtaskRepo.findById(id).orElseThrow();
         subtask.setTimeSpent(hours);
         subtask.setUpdatedAt(LocalDate.now());
+        subtaskRepo.save(subtask); 
     }
 
     public List<SubtaskResponseDTO> getSubtasksByAssignee(Long assigneeId) {
