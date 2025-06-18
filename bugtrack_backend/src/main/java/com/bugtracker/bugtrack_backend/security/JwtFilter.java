@@ -1,7 +1,8 @@
 package com.bugtracker.bugtrack_backend.security;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Optional;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,31 +35,33 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain chain
     ) throws ServletException, IOException {
 
-        String token = null;
-
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
+        String token = extractTokenFromCookies(request);
 
         if (token != null && jwtUtil.validateToken(token)) {
             String email = jwtUtil.extractEmail(token);
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user != null) {
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                user,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-                        );
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            userOpt.ifPresent(user -> {
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null,
+                        Arrays.asList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                );
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+            });
         }
 
         chain.doFilter(request, response);
+    }
+
+    private String extractTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> "token".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -26,10 +26,14 @@ public class UserService {
         User user = (User) auth.getPrincipal();
 
         List<IssueResponseDTO> assignedIssues = issueRepo.findByAssigneeId(user.getId())
-                .stream().map(issueMapper::toDTO).toList();
+                .stream()
+                .map(issueMapper::toDTO)
+                .toList();
 
         List<SubtaskResponseDTO> assignedSubtasks = subtaskRepo.findByAssigneeId(user.getId())
-                .stream().map(SubtaskMapper::toDTO).toList();
+                .stream()
+                .map(SubtaskMapper::toDTO)
+                .toList();
 
         return new UserProfileDTO(
                 user.getId(),

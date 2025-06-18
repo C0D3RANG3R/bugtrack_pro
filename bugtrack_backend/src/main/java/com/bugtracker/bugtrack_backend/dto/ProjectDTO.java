@@ -1,7 +1,6 @@
 package com.bugtracker.bugtrack_backend.dto;
 
 import lombok.Data;
-
 import java.util.Set;
 
 @Data

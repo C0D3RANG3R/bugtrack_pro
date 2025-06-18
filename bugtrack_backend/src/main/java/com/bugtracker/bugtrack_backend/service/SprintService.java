@@ -24,7 +24,8 @@ public class SprintService {
     private final IssueRepository issueRepo;
 
     public SprintResponseDTO create(SprintRequestDTO dto) {
-        Project project = projectRepo.findById(dto.getProjectId()).orElseThrow();
+        Project project = projectRepo.findById(dto.getProjectId())
+                .orElseThrow();
         Sprint sprint = Sprint.builder()
                 .name(dto.getName())
                 .startDate(dto.getStartDate())
@@ -38,11 +39,15 @@ public class SprintService {
 
     public List<SprintResponseDTO> getByProject(Long projectId) {
         return sprintRepo.findByProjectId(projectId)
-                .stream().map(SprintMapper::toDTO).collect(Collectors.toList());
+                .stream()
+                .map(SprintMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     public SprintResponseDTO getById(Long id) {
-        return sprintRepo.findById(id).map(SprintMapper::toDTO).orElseThrow();
+        return sprintRepo.findById(id)
+                .map(SprintMapper::toDTO)
+                .orElseThrow();
     }
 
     public void delete(Long id) {
@@ -50,27 +55,34 @@ public class SprintService {
     }
 
     public void updateStatus(Long id, String status) {
-        Sprint sprint = sprintRepo.findById(id).orElseThrow();
+        Sprint sprint = sprintRepo.findById(id)
+                .orElseThrow();
         sprint.setStatus(status);
         sprintRepo.save(sprint);
     }
 
     public void assignIssue(Long sprintId, Long issueId) {
-        Sprint sprint = sprintRepo.findById(sprintId).orElseThrow();
-        Issue issue = issueRepo.findById(issueId).orElseThrow();
+        Sprint sprint = sprintRepo.findById(sprintId)
+                .orElseThrow();
+        Issue issue = issueRepo.findById(issueId)
+                .orElseThrow();
         issue.setSprint(sprint);
         issueRepo.save(issue);
     }
 
     public void removeIssue(Long issueId) {
-        Issue issue = issueRepo.findById(issueId).orElseThrow();
+        Issue issue = issueRepo.findById(issueId)
+                .orElseThrow();
         issue.setSprint(null);
         issueRepo.save(issue);
     }
 
     public List<Issue> getKanbanBySprint(Long sprintId) {
         return issueRepo.findAll().stream()
-                .filter(issue -> issue.getSprint() != null && issue.getSprint().getId().equals(sprintId))
+                .filter(issue -> {
+                    Sprint sprint = issue.getSprint();
+                    return sprint != null && sprintId.equals(sprint.getId());
+                })
                 .collect(Collectors.toList());
     }
 }

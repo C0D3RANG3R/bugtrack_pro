@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class AttachmentService {
+
     private final AttachmentRepository attachmentRepo;
     private final IssueRepository issueRepo;
     private final SubtaskRepository subtaskRepo;
@@ -31,42 +32,23 @@ public class AttachmentService {
     private final NotificationService notificationService;
     private final ActivityLogService activityLogService;
 
-    private final Path uploadDir = Paths.get("uploads");
+    private static final Path UPLOAD_DIR = Paths.get("uploads");
 
     public Attachment upload(MultipartFile file, Long issueId, Long subtaskId, Long userId) throws IOException {
-        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
+        ensureUploadDirExists();
 
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = uploadDir.resolve(filename);
+        String filename = generateUniqueFilename(file.getOriginalFilename());
+        Path filePath = UPLOAD_DIR.resolve(filename);
         Files.copy(file.getInputStream(), filePath);
 
-        Attachment attachment = new Attachment();
-        attachment.setFileName(file.getOriginalFilename());
-        attachment.setFilePath(filePath.toString());
-        attachment.setFileType(file.getContentType());
-        attachment.setUploadedAt(LocalDateTime.now());
-        attachment.setUploadedBy(userRepo.findById(userId).orElseThrow());
-
-        Issue issue = null;
-        Subtask subtask = null;
-        if (issueId != null) {
-            issue = issueRepo.findById(issueId).orElseThrow();
-            attachment.setIssue(issue);
-        }
-        if (subtaskId != null) {
-            subtask = subtaskRepo.findById(subtaskId).orElseThrow();
-            attachment.setSubtask(subtask);
-        }
+        Attachment attachment = buildAttachment(file, filePath, userId, issueId, subtaskId);
 
         attachmentRepo.save(attachment);
-        notificationService.sendNotification(userId, "File uploaded by User ID: " + userId + " to Issue/Subtask");
-        activityLogService.logAction(
-            userId,
-            "Uploaded file to " + (issue != null ? "issue: " + (issue).getId() : "subtask: " + (subtask).getId()),
-            issue != null ? (issue).getId() : (subtask).getId()
-        );
-        return attachment;
 
+        sendUploadNotification(userId);
+        logUploadActivity(userId, attachment);
+
+        return attachment;
     }
 
     public byte[] download(Long id) throws IOException {
@@ -92,4 +74,69 @@ public class AttachmentService {
         return attachmentRepo.findByUploadedById(uploadedById);
     }
 
+    // --- Private helper methods ---
+
+    private void ensureUploadDirExists() throws IOException {
+        if (!Files.exists(UPLOAD_DIR)) {
+            Files.createDirectories(UPLOAD_DIR);
+        }
+    }
+
+    private String generateUniqueFilename(String originalFilename) {
+        return UUID.randomUUID() + "_" + originalFilename;
+    }
+
+    private Attachment buildAttachment(
+            MultipartFile file,
+            Path filePath,
+            Long userId,
+            Long issueId,
+            Long subtaskId
+    ) {
+        Attachment attachment = new Attachment();
+        attachment.setFileName(file.getOriginalFilename());
+        attachment.setFilePath(filePath.toString());
+        attachment.setFileType(file.getContentType());
+        attachment.setUploadedAt(LocalDateTime.now());
+        attachment.setUploadedBy(userRepo.findById(userId).orElseThrow());
+
+        if (issueId != null) {
+            Issue issue = issueRepo.findById(issueId).orElseThrow();
+            attachment.setIssue(issue);
+        }
+        if (subtaskId != null) {
+            Subtask subtask = subtaskRepo.findById(subtaskId).orElseThrow();
+            attachment.setSubtask(subtask);
+        }
+        return attachment;
+    }
+
+    private void sendUploadNotification(Long userId) {
+        notificationService.sendNotification(
+                userId,
+                "File uploaded by User ID: " + userId + " to Issue/Subtask"
+        );
+    }
+
+    private void logUploadActivity(Long userId, Attachment attachment) {
+        String targetType;
+        Long targetId;
+
+        if (attachment.getIssue() != null) {
+            targetType = "issue: " + attachment.getIssue().getId();
+            targetId = attachment.getIssue().getId();
+        } else if (attachment.getSubtask() != null) {
+            targetType = "subtask: " + attachment.getSubtask().getId();
+            targetId = attachment.getSubtask().getId();
+        } else {
+            targetType = "unknown";
+            targetId = null;
+        }
+
+        activityLogService.logAction(
+                userId,
+                "Uploaded file to " + targetType,
+                targetId
+        );
+    }
 }

@@ -1,34 +1,29 @@
 package com.bugtracker.bugtrack_backend.controller;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.bugtracker.bugtrack_backend.dto.NotificationDTO;
 import com.bugtracker.bugtrack_backend.service.NotificationService;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationService service;
+    private final NotificationService notificationService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<NotificationDTO>> getAll(@PathVariable Long userId) {
-        return ResponseEntity.ok(service.getNotifications(userId));
+    public ResponseEntity<List<NotificationDTO>> getAllNotifications(@PathVariable Long userId) {
+        List<NotificationDTO> notifications = notificationService.getNotifications(userId);
+        return ResponseEntity.ok(notifications);
     }
 
     @PatchMapping("/{id}/seen")
-    public ResponseEntity<Void> markAsSeen(@PathVariable Long id) {
-        service.markAsSeen(id);
+    public ResponseEntity<Void> markNotificationAsSeen(@PathVariable Long id) {
+        notificationService.markAsSeen(id);
         return ResponseEntity.ok().build();
     }
 }

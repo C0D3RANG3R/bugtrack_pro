@@ -16,24 +16,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ActivityLogService {
 
-    private final ActivityLogRepository repo;
-    private final UserRepository userRepo;
+    private final ActivityLogRepository activityLogRepository;
+    private final UserRepository userRepository;
 
     public void logAction(Long userId, String action, Long referenceId) {
-        User user = userRepo.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId).orElseThrow();
         ActivityLog log = new ActivityLog();
         log.setUser(user);
         log.setAction(action);
         log.setReferenceId(referenceId);
         log.setTimestamp(LocalDateTime.now());
-        repo.save(log);
+        activityLogRepository.save(log);
     }
 
     public List<ActivityLog> getAllLogs() {
-        return repo.findAll();
+        return activityLogRepository.findAll();
     }
 
     public List<ActivityLog> getLogsByUser(Long userId) {
-        return repo.findByUserId(userId);
+        return activityLogRepository.findByUserId(userId);
     }
 }

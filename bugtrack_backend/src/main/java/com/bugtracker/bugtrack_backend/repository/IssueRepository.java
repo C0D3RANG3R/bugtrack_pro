@@ -1,13 +1,12 @@
 package com.bugtracker.bugtrack_backend.repository;
 
-import java.util.List;
-
+import com.bugtracker.bugtrack_backend.entity.Issue;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.bugtracker.bugtrack_backend.entity.Issue;
+import java.util.List;
 
 @Repository
 public interface IssueRepository extends JpaRepository<Issue, Long> {
@@ -23,8 +22,7 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Issue> findByProjectIdAndStatus(Long projectId, String status);
 
     @Query("SELECT i FROM Issue i WHERE " +
-       "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-       "LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+           "LOWER(i.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(i.description) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Issue> search(@Param("query") String query);
-    
 }

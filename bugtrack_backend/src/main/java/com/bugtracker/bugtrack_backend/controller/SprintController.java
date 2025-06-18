@@ -7,6 +7,7 @@ import com.bugtracker.bugtrack_backend.service.SprintService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -18,17 +19,20 @@ public class SprintController {
 
     @PostMapping
     public ResponseEntity<SprintResponseDTO> create(@RequestBody SprintRequestDTO dto) {
-        return ResponseEntity.ok(sprintService.create(dto));
+        SprintResponseDTO response = sprintService.create(dto);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<SprintResponseDTO>> getByProject(@PathVariable Long projectId) {
-        return ResponseEntity.ok(sprintService.getByProject(projectId));
+        List<SprintResponseDTO> sprints = sprintService.getByProject(projectId);
+        return ResponseEntity.ok(sprints);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SprintResponseDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(sprintService.getById(id));
+        SprintResponseDTO sprint = sprintService.getById(id);
+        return ResponseEntity.ok(sprint);
     }
 
     @DeleteMapping("/{id}")
@@ -38,13 +42,19 @@ public class SprintController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Void> updateStatus(@PathVariable Long id, @RequestParam String status) {
+    public ResponseEntity<Void> updateStatus(
+            @PathVariable Long id,
+            @RequestParam String status
+    ) {
         sprintService.updateStatus(id, status);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{sprintId}/assign/{issueId}")
-    public ResponseEntity<Void> assignIssue(@PathVariable Long sprintId, @PathVariable Long issueId) {
+    public ResponseEntity<Void> assignIssue(
+            @PathVariable Long sprintId,
+            @PathVariable Long issueId
+    ) {
         sprintService.assignIssue(sprintId, issueId);
         return ResponseEntity.ok().build();
     }
@@ -57,6 +67,7 @@ public class SprintController {
 
     @GetMapping("/{sprintId}/kanban")
     public ResponseEntity<List<Issue>> kanban(@PathVariable Long sprintId) {
-        return ResponseEntity.ok(sprintService.getKanbanBySprint(sprintId));
+        List<Issue> issues = sprintService.getKanbanBySprint(sprintId);
+        return ResponseEntity.ok(issues);
     }
 }

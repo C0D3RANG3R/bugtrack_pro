@@ -38,20 +38,11 @@ public class IssueService {
             .orElseThrow(() -> new RuntimeException("Reporter not found"));
         Issue issue = issueMapper.toEntity(dto, reporter);
         issueRepo.save(issue);
-        notificationService.sendNotification(
-            issue.getAssignee().getId(),
-            "Issue assigned to: " + issue.getAssignee().getUsername()
-        );
-        activityLogService.logAction(
-            dto.getReporterId(),
-            "Created issue: " + issue.getTitle(),
-            issue.getId()
-        );
-        emailService.send(
-            issue.getAssignee().getEmail(),
-            "📝 New Issue Assigned: " + issue.getTitle(),
-            "You have been assigned a new issue in project: " + issue.getProject().getName() +
-            "\n\nDescription: " + issue.getDescription());
+
+        notifyAssignee(issue);
+        logIssueCreation(dto.getReporterId(), issue);
+        sendIssueAssignmentEmail(issue);
+
         return issueMapper.toDTO(issue);
     }
 
@@ -77,16 +68,15 @@ public class IssueService {
 
     @Transactional
     public void updateIssueStatus(Long id, String status) {
-        Issue issue = issueRepo.findById(id).orElseThrow();
+        Issue issue = issueRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Issue not found"));
         String oldStatus = issue.getStatus();
 
         issue.setStatus(status);
         issue.setUpdatedAt(LocalDate.now());
         issueRepo.save(issue);
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        User user = (User) auth.getPrincipal();
-
+        User user = getCurrentUser();
         TransitionLog log = new TransitionLog(
             null, issue, oldStatus, status, user, LocalDateTime.now()
         );
@@ -103,19 +93,10 @@ public class IssueService {
             null, content, LocalDateTime.now(), author, issue
         );
         commentRepo.save(comment);
-        notificationService.sendNotification(
-            authorId,
-            "New comment by " + author.getUsername() + " on issue: " + issue.getTitle()
-        );
-        activityLogService.logAction(
-            authorId,
-            "Added comment to issue: " + issue.getTitle(),
-            issue.getId()
-        );
-        emailService.send(
-            issue.getReporter().getEmail(),
-            "New Comment on Issue: " + issue.getTitle(),
-            author.getUsername() + " added a new comment: \n\n" + content);
+
+        notifyComment(author, issue);
+        logComment(authorId, issue);
+        sendCommentEmail(issue, author, content);
 
         return commentMapper.toDTO(comment);
     }
@@ -129,7 +110,6 @@ public class IssueService {
 
     public List<KanbanResponseDTO> getKanbanBoardByProject(Long projectId) {
         List<String> statuses = List.of("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED");
-
         return statuses.stream()
             .map(status -> {
                 List<Issue> issues = issueRepo.findByProjectIdAndStatus(projectId, status);
@@ -145,7 +125,7 @@ public class IssueService {
         return issueRepo.search(query)
             .stream()
             .map(issueMapper::toDTO)
-            .toList();
+            .collect(Collectors.toList());
     }
 
     public List<IssueResponseDTO> filterIssues(
@@ -156,29 +136,80 @@ public class IssueService {
         if (status != null) {
             issues = issues.stream()
                 .filter(i -> i.getStatus().equalsIgnoreCase(status))
-                .toList();
+                .collect(Collectors.toList());
         }
-
         if (priority != null) {
             issues = issues.stream()
                 .filter(i -> i.getPriority().equalsIgnoreCase(priority))
-                .toList();
+                .collect(Collectors.toList());
         }
-
         if (assigneeId != null) {
             issues = issues.stream()
                 .filter(i -> i.getAssignee().getId().equals(assigneeId))
-                .toList();
+                .collect(Collectors.toList());
         }
-
         if (projectId != null) {
             issues = issues.stream()
                 .filter(i -> i.getProject().getId().equals(projectId))
-                .toList();
+                .collect(Collectors.toList());
         }
 
         return issues.stream()
             .map(issueMapper::toDTO)
-            .toList();
+            .collect(Collectors.toList());
+    }
+
+    // --- Private helper methods ---
+
+    private void notifyAssignee(Issue issue) {
+        notificationService.sendNotification(
+            issue.getAssignee().getId(),
+            "Issue assigned to: " + issue.getAssignee().getUsername()
+        );
+    }
+
+    private void logIssueCreation(Long reporterId, Issue issue) {
+        activityLogService.logAction(
+            reporterId,
+            "Created issue: " + issue.getTitle(),
+            issue.getId()
+        );
+    }
+
+    private void sendIssueAssignmentEmail(Issue issue) {
+        emailService.send(
+            issue.getAssignee().getEmail(),
+            "📝 New Issue Assigned: " + issue.getTitle(),
+            "You have been assigned a new issue in project: " + issue.getProject().getName() +
+                "\n\nDescription: " + issue.getDescription()
+        );
+    }
+
+    private void notifyComment(User author, Issue issue) {
+        notificationService.sendNotification(
+            author.getId(),
+            "New comment by " + author.getUsername() + " on issue: " + issue.getTitle()
+        );
+    }
+
+    private void logComment(Long authorId, Issue issue) {
+        activityLogService.logAction(
+            authorId,
+            "Added comment to issue: " + issue.getTitle(),
+            issue.getId()
+        );
+    }
+
+    private void sendCommentEmail(Issue issue, User author, String content) {
+        emailService.send(
+            issue.getReporter().getEmail(),
+            "New Comment on Issue: " + issue.getTitle(),
+            author.getUsername() + " added a new comment: \n\n" + content
+        );
+    }
+
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (User) auth.getPrincipal();
     }
 }

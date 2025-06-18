@@ -21,32 +21,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     @Override
     public Project createProject(ProjectDTO dto) {
-        Project project = new Project();
-        project.setName(dto.getName());
-        project.setDescription(dto.getDescription());
-
-        Set<User> users = new HashSet<>();
-        for (Long userId : dto.getUserIds()) {
-            userRepository.findById(userId).ifPresent(users::add);
-        }
-
-        project.setUsers(users);
+        Project project = mapDtoToProject(new Project(), dto);
         return projectRepository.save(project);
     }
 
     @Override
     public Project updateProject(Long id, ProjectDTO dto) {
-        Project project = projectRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Project not found"));
-
-        project.setName(dto.getName());
-        project.setDescription(dto.getDescription());
-
-        Set<User> users = new HashSet<>();
-        for (Long userId : dto.getUserIds()) {
-            userRepository.findById(userId).ifPresent(users::add);
-        }
-
-        project.setUsers(users);
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
+        mapDtoToProject(project, dto);
         return projectRepository.save(project);
     }
 
@@ -57,11 +40,26 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project getProjectById(Long id) {
-        return projectRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Project not found"));
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Project not found"));
     }
 
     @Override
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
+    }
+
+    private Project mapDtoToProject(Project project, ProjectDTO dto) {
+        project.setName(dto.getName());
+        project.setDescription(dto.getDescription());
+
+        Set<User> users = new HashSet<>();
+        if (dto.getUserIds() != null) {
+            dto.getUserIds().forEach(userId ->
+                userRepository.findById(userId).ifPresent(users::add)
+            );
+        }
+        project.setUsers(users);
+        return project;
     }
 }

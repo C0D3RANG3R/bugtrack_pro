@@ -6,7 +6,6 @@ import com.bugtracker.bugtrack_backend.dto.RegisterRequest;
 import com.bugtracker.bugtrack_backend.entity.User;
 import com.bugtracker.bugtrack_backend.repository.UserRepository;
 import com.bugtracker.bugtrack_backend.security.JwtUtil;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,23 +17,27 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    // private final EmailService emailService;
+    private final EmailService emailService;
 
     public void register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
 
-        User user = new User(null, request.getUsername(), request.getEmail(),
-                passwordEncoder.encode(request.getPassword()), request.getRole());
+        User user = new User(
+            null,
+            request.getUsername(),
+            request.getEmail(),
+            passwordEncoder.encode(request.getPassword()),
+            request.getRole()
+        );
         userRepository.save(user);
-
-        // emailService.sendWelcomeMail(user.getEmail(), user.getUsername());
+        emailService.sendWelcomeMail(user.getEmail(), user.getUsername());
     }
 
     public AuthResponse login(AuthRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+            .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
@@ -46,7 +49,7 @@ public class AuthService {
 
     public User validateUser(String email, String rawPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Invalid email"));
+            .orElseThrow(() -> new RuntimeException("Invalid email"));
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new RuntimeException("Invalid password");

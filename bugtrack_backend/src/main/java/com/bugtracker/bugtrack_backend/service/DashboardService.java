@@ -21,21 +21,27 @@ public class DashboardService {
     private final IssueRepository issueRepo;
 
     public DashboardDTO getDashboardStats() {
-    long totalUsers = userRepo.count();
-    long totalProjects = projectRepo.count();
-    long totalIssues = issueRepo.count();
+        long totalUsers = userRepo.count();
+        long totalProjects = projectRepo.count();
+        long totalIssues = issueRepo.count();
 
-    Map<String, Long> statusMap = new HashMap<>();
-    for (Object[] row : issueRepo.countByStatusGroupRaw()) {
-        statusMap.put((String) row[0], (Long) row[1]);
+        Map<String, Long> statusMap = mapGroupResult(issueRepo.countByStatusGroupRaw());
+        Map<String, Long> priorityMap = mapGroupResult(issueRepo.countByPriorityGroupRaw());
+
+        return new DashboardDTO(
+            totalUsers,
+            totalProjects,
+            totalIssues,
+            statusMap,
+            priorityMap
+        );
     }
 
-    Map<String, Long> priorityMap = new HashMap<>();
-    for (Object[] row : issueRepo.countByPriorityGroupRaw()) {
-        priorityMap.put((String) row[0], (Long) row[1]);
+    private Map<String, Long> mapGroupResult(Iterable<Object[]> groupResult) {
+        Map<String, Long> resultMap = new HashMap<>();
+        for (Object[] row : groupResult) {
+            resultMap.put((String) row[0], (Long) row[1]);
+        }
+        return resultMap;
     }
-
-    return new DashboardDTO(totalUsers, totalProjects, totalIssues, statusMap, priorityMap);
-}
-
 }

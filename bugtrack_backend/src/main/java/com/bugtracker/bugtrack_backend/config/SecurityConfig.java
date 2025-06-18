@@ -24,27 +24,35 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    private static final String FRONTEND_ORIGIN = "http://localhost:4200";
+    private static final List<String> ALLOWED_METHODS = List.of("GET", "POST", "PUT", "DELETE", "PATCH");
+
     private final JwtFilter jwtFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(request -> {
-                CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:4200")); // Your frontend origin
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
-                config.setAllowedHeaders(List.of("*"));
-                config.setAllowCredentials(true); // Required for cookies
-                return config;
-            }))
+            .cors(cors -> cors.configurationSource(request -> buildCorsConfiguration()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private CorsConfiguration buildCorsConfiguration() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(FRONTEND_ORIGIN));
+        config.setAllowedMethods(ALLOWED_METHODS);
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        return config;
     }
 
     @Bean

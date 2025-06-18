@@ -1,7 +1,6 @@
 package com.bugtracker.bugtrack_backend.controller;
 
 import com.bugtracker.bugtrack_backend.dto.AuthRequest;
-import com.bugtracker.bugtrack_backend.dto.AuthResponse;
 import com.bugtracker.bugtrack_backend.dto.RegisterRequest;
 import com.bugtracker.bugtrack_backend.dto.UserProfileDTO;
 import com.bugtracker.bugtrack_backend.entity.User;
@@ -17,12 +16,7 @@ import java.time.Duration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,39 +39,39 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request, HttpServletResponse response) {
-    User user = authService.validateUser(request.getEmail(), request.getPassword());
-    String jwt = jwtUtil.generateToken(user);
+    public ResponseEntity<String> login(@RequestBody AuthRequest request, HttpServletResponse response) {
+        User user = authService.validateUser(request.getEmail(), request.getPassword());
+        String jwt = jwtUtil.generateToken(user);
 
-    ResponseCookie cookie = ResponseCookie.from("token", jwt)
-        .httpOnly(true)
-        .secure(true) // Set false for localhost testing
-        .path("/")
-        .maxAge(Duration.ofHours(1))
-        .sameSite("Strict") // or "Lax"
-        .build();
+        ResponseCookie cookie = ResponseCookie.from("token", jwt)
+                .httpOnly(true)
+                .secure(true) // Set to false for localhost testing if needed
+                .path("/")
+                .maxAge(Duration.ofHours(1))
+                .sameSite("Strict")
+                .build();
 
-    response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    return ResponseEntity.ok("Login successful");
-}
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok("Login successful");
+    }
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile() {
-        return ResponseEntity.ok(userService.getCurrentUserProfile());
+        UserProfileDTO profile = userService.getCurrentUserProfile();
+        return ResponseEntity.ok(profile);
     }
+
     @PostMapping("/logout")
-public ResponseEntity<?> logout(HttpServletResponse response) {
-    ResponseCookie expiredCookie = ResponseCookie.from("token", "")
-            .httpOnly(true)
-            .secure(false)
-            .path("/")
-            .maxAge(0)
-            .sameSite("Strict")
-            .build();
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        ResponseCookie expiredCookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(true) // Set to false for localhost testing if needed
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
 
-    response.setHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
-    return ResponseEntity.ok("Logout successful");
+        response.setHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
+        return ResponseEntity.ok("Logout successful");
+    }
 }
-
-}
-

@@ -20,29 +20,36 @@ public class ProjectController {
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Project> createProject(@RequestBody ProjectDTO dto) {
-        return ResponseEntity.ok(projectService.createProject(dto));
+        Project createdProject = projectService.createProject(dto);
+        return ResponseEntity.ok(createdProject);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Project> updateProject(@PathVariable Long id, @RequestBody ProjectDTO dto) {
-        return ResponseEntity.ok(projectService.updateProject(id, dto));
+    public ResponseEntity<Project> updateProject(
+            @PathVariable Long id,
+            @RequestBody ProjectDTO dto
+    ) {
+        Project updatedProject = projectService.updateProject(id, dto);
+        return ResponseEntity.ok(updatedProject);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<?> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProject(@PathVariable Long id) {
-        return ResponseEntity.ok(projectService.getProjectById(id));
+        Project project = projectService.getProjectById(id);
+        return ResponseEntity.ok(project);
     }
 
     @GetMapping
     public ResponseEntity<List<Project>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
+        List<Project> projects = projectService.getAllProjects();
+        return ResponseEntity.ok(projects);
     }
 }

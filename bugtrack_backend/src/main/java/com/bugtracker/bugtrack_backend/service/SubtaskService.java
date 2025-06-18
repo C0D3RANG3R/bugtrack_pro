@@ -19,12 +19,52 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class SubtaskService {
+
     private final SubtaskRepository subtaskRepo;
     private final IssueRepository issueRepo;
     private final UserRepository userRepo;
     private final ActivityLogService activityLogService;
 
     public SubtaskResponseDTO create(SubtaskRequestDTO dto) {
+        Subtask subtask = buildSubtaskFromDTO(dto);
+        subtaskRepo.save(subtask);
+        activityLogService.logAction(
+            dto.getAssigneeId(),
+            "Created subtask: " + subtask.getTitle(),
+            subtask.getId()
+        );
+        return SubtaskMapper.toDTO(subtask);
+    }
+
+    public List<SubtaskResponseDTO> getByIssue(Long issueId) {
+        return subtaskRepo.findByIssueId(issueId)
+                .stream()
+                .map(SubtaskMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public void updateStatus(Long id, String status) {
+        Subtask subtask = getSubtaskById(id);
+        subtask.setStatus(status);
+        subtask.setUpdatedAt(LocalDate.now());
+        subtaskRepo.save(subtask);
+    }
+
+    public void updateTimeSpent(Long id, Double hours) {
+        Subtask subtask = getSubtaskById(id);
+        subtask.setTimeSpent(hours);
+        subtask.setUpdatedAt(LocalDate.now());
+        subtaskRepo.save(subtask);
+    }
+
+    public List<SubtaskResponseDTO> getSubtasksByAssignee(Long assigneeId) {
+        return subtaskRepo.findByAssigneeId(assigneeId)
+                .stream()
+                .map(SubtaskMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    private Subtask buildSubtaskFromDTO(SubtaskRequestDTO dto) {
         Subtask subtask = new Subtask();
         subtask.setTitle(dto.getTitle());
         subtask.setStatus("TODO");
@@ -34,37 +74,10 @@ public class SubtaskService {
         subtask.setAssignee(userRepo.findById(dto.getAssigneeId()).orElseThrow());
         subtask.setCreatedAt(LocalDate.now());
         subtask.setUpdatedAt(LocalDate.now());
-        subtaskRepo.save(subtask);
-        activityLogService.logAction(
-            dto.getAssigneeId(),
-            "Created subtask: " + subtask.getTitle(),
-            subtask.getId());
-        return SubtaskMapper.toDTO(subtask);
+        return subtask;
     }
 
-    public List<SubtaskResponseDTO> getByIssue(Long issueId) {
-        return subtaskRepo.findByIssueId(issueId).stream().map(SubtaskMapper::toDTO).collect(Collectors.toList());
+    private Subtask getSubtaskById(Long id) {
+        return subtaskRepo.findById(id).orElseThrow();
     }
-
-    public void updateStatus(Long id, String status) {
-        Subtask subtask = subtaskRepo.findById(id).orElseThrow();
-        subtask.setStatus(status);
-        subtask.setUpdatedAt(LocalDate.now());
-        subtaskRepo.save(subtask); 
-    }
-
-    public void updateTimeSpent(Long id, Double hours) {
-        Subtask subtask = subtaskRepo.findById(id).orElseThrow();
-        subtask.setTimeSpent(hours);
-        subtask.setUpdatedAt(LocalDate.now());
-        subtaskRepo.save(subtask); 
-    }
-
-    public List<SubtaskResponseDTO> getSubtasksByAssignee(Long assigneeId) {
-    return subtaskRepo.findByAssigneeId(assigneeId)
-                      .stream()
-                      .map(SubtaskMapper::toDTO)
-                      .collect(Collectors.toList());
-    }
-
 }

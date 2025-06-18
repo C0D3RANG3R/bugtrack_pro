@@ -1,7 +1,6 @@
 package com.bugtracker.bugtrack_backend.dto;
 
 import java.time.LocalDate;
-
 import lombok.Data;
 
 @Data
