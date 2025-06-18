@@ -57,4 +57,10 @@ public class IssueController {
     public ResponseEntity<List<CommentDTO>> getComments(@PathVariable Long id) {
         return ResponseEntity.ok(issueService.getComments(id));
     }
+
+    @GetMapping("/project/{projectId}/kanban")
+    public ResponseEntity<List<KanbanResponseDTO>> getKanbanBoard(@PathVariable Long projectId) {
+        return ResponseEntity.ok(issueService.getKanbanBoardByProject(projectId));
+    }
+
 }
