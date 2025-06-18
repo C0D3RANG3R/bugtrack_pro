@@ -43,4 +43,15 @@ public class AuthService {
         String token = jwtUtil.generateToken(user);
         return new AuthResponse(token, user.getUsername(), user.getRole());
     }
+
+    public User validateUser(String email, String rawPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email"));
+
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        return user;
+    }
 }
