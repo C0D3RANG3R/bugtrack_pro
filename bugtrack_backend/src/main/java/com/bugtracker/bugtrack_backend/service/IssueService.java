@@ -31,6 +31,7 @@ public class IssueService {
     private final NotificationService notificationService;
     private final ActivityLogService activityLogService;
     private final TransitionLogRepository transitionLogRepo;
+    private final EmailService emailService;
 
     public IssueResponseDTO createIssue(IssueRequestDTO dto) throws Exception {
         User reporter = userRepo.findById(dto.getReporterId())
@@ -46,6 +47,11 @@ public class IssueService {
             "Created issue: " + issue.getTitle(),
             issue.getId()
         );
+        emailService.send(
+            issue.getAssignee().getEmail(),
+            "📝 New Issue Assigned: " + issue.getTitle(),
+            "You have been assigned a new issue in project: " + issue.getProject().getName() +
+            "\n\nDescription: " + issue.getDescription());
         return issueMapper.toDTO(issue);
     }
 
@@ -106,6 +112,11 @@ public class IssueService {
             "Added comment to issue: " + issue.getTitle(),
             issue.getId()
         );
+        emailService.send(
+            issue.getReporter().getEmail(),
+            "New Comment on Issue: " + issue.getTitle(),
+            author.getUsername() + " added a new comment: \n\n" + content);
+
         return commentMapper.toDTO(comment);
     }
 
